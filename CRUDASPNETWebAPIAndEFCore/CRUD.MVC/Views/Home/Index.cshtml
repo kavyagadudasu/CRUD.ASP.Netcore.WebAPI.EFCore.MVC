@@ -1,0 +1,229 @@
+﻿@model IEnumerable<Employee>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body>
+    <table id="tblEmployees" class="table" cellpadding="0" cellspacing="0">
+        <tr>
+            <th style="width:100px">Employee Id</th>
+            <th style="width:150px">First Name</th>
+            <th style="width:150px">Last Name</th>
+            <th style="width:150px">Salary</th>
+            <th style="width:150px"></th>
+        </tr>
+        @foreach (var employee in Model)
+        {
+    <tr>
+        <td style="text-align: center" class="EmployeeId">
+            <span>@employee.Id</span>
+        </td>
+        <td  style="text-align: center" class="FirstName">
+            <span>@employee.FirstName</span>
+            <input type="text" value="@employee.FirstName" style="display:none" />
+        </td>
+        <td style="text-align: center" class="LastName">
+            <span>@employee.LastName</span>
+            <input type="text" value="@employee.LastName" style="display:none" />
+        </td>
+        <td style="text-align: center" class="Salary">
+            <span>@employee.Salary</span>
+            <input type="text" value="@employee.Salary" style="display:none" />
+        </td>
+        <td>
+            <a class="Edit" href="javascript:;">Edit</a>
+            <a class="Update" href="javascript:;" style="display:none">Update</a>
+            <a class="Cancel" href="javascript:;" style="display:none">Cancel</a>
+            <a class="Delete" href="javascript:;">Delete</a>
+        </td>
+    </tr>
+        }
+    </table>
+    <table border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 150px">
+                First Name<br />
+                <input type="text" id="txtFirstName" style="width:140px" />
+            </td>
+            <td style="width: 150px">
+                Last Name:<br />
+                <input type="text" id="txtLastName" style="width:140px" />
+            </td>
+            <td style="width: 150px">
+                Salary:<br />
+                <input type="text" id="txtSalary" style="width:140px" />
+            </td>
+            <td style="width: 200px">
+                <br />
+                <input type="button" id="btnAdd" value="Add" />
+            </td>
+        </tr>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"
+            integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+            crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            //Remove the dummy row if data present.
+            if ($("#tblEmployees tr").length > 1) {
+                //$("#tblEmployees tr:eq(1)").remove();
+            } else {
+                var row = $("#tblEmployees tr:last-child");
+                row.find(".Edit").hide();
+                row.find(".Delete").hide();
+                row.find("span").html('&nbsp;');
+            }
+        });
+        function AppendRow(row, id, firstName, lastName, salary) {
+            //Bind EmployeeId.
+            $(".EmployeeId", row).find("span").html(id);
+
+            //Bind First Name.
+            $(".FirstName", row).find("span").html(firstName);
+            $(".FirstName", row).find("input").val(firstName);
+
+            //Bind Last Name.
+            $(".LastName", row).find("span").html(lastName);
+            $(".LastName", row).find("input").val(lastName);
+
+            //Bind Salary.
+            $(".Salary", row).find("span").html(salary);
+            $(".Salary", row).find("input").val(salary);
+
+            row.find(".Edit").show();
+            row.find(".Delete").show();
+
+            $("#tblEmployees").append(row);
+        };
+
+        //Add event handler.
+        $("body").on("click", "#btnAdd", function () {
+            var txtFirstName = $("#txtFirstName");
+            var txtLastName = $("#txtLastName");
+            var txtSalary = $("#txtSalary");
+            var employee = {};
+            employee.FirstName = txtFirstName.val();
+            employee.LastName = txtLastName.val();
+            employee.Salary = txtSalary.val();
+            $.ajax({
+                type: "POST",
+                url: "https://localhost:44399/api/Employees",
+                data: JSON.stringify(employee),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (r) {
+                    var row = $("#tblEmployees tr:last-child");
+                    if ($("#tblEmployees tr:last-child span").eq(0).html() != "&nbsp;") {
+                        row = row.clone();
+                    }
+                    AppendRow(row, r.id, r.firstName, r.lastName, r.salary);
+                    txtFirstName.val("");
+                    txtLastName.val("");
+                    txtSalary.val("");
+                }
+            });
+        });
+
+        //Edit event handler.
+        $("body").on("click", "#tblEmployees .Edit", function () {
+            var row = $(this).closest("tr");
+            $("td", row).each(function () {
+                if ($(this).find("input").length > 0) {
+                    $(this).find("input").show();
+                    $(this).find("span").hide();
+                }
+            });
+            row.find(".Update").show();
+            row.find(".Cancel").show();
+            row.find(".Delete").hide();
+            $(this).hide();
+        });
+
+        //Update event handler.
+        $("body").on("click", "#tblEmployees .Update", function () {
+            var row = $(this).closest("tr");
+            $("td", row).each(function () {
+                if ($(this).find("input").length > 0) {
+                    var span = $(this).find("span");
+                    var input = $(this).find("input");
+                    span.html(input.val());
+                    span.show();
+                    input.hide();
+                }
+            });
+            row.find(".Edit").show();
+            row.find(".Delete").show();
+            row.find(".Cancel").hide();
+            $(this).hide();
+            var employee = {};
+            var employeeId = row.find(".EmployeeId").find("span").html();
+            employee.Id = +employeeId;
+            employee.FirstName = row.find(".FirstName").find("span").html();
+            employee.LastName = row.find(".LastName").find("span").html();
+            employee.Salary = row.find(".Salary").find("span").html();
+            $.ajax({
+                type: "PUT",
+                url: "https://localhost:44399/api/Employees",
+                data: JSON.stringify(employee),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json"
+            });
+        });
+
+        //Cancel event handler.
+        $("body").on("click", "#tblEmployees .Cancel", function () {
+            var row = $(this).closest("tr");
+            $("td", row).each(function () {
+                if ($(this).find("input").length > 0) {
+                    var span = $(this).find("span");
+                    var input = $(this).find("input");
+                    input.val(span.html());
+                    span.show();
+                    input.hide();
+                }
+            });
+            row.find(".Edit").show();
+            row.find(".Delete").show();
+            row.find(".Update").hide();
+            $(this).hide();
+        });
+
+        //Delete event handler.
+        $("body").on("click", "#tblEmployees .Delete", function () {
+            if (confirm("Do you want to delete this row?")) {
+                var row = $(this).closest("tr");
+                var employee = {};
+                var employeeId = row.find(".EmployeeId").find("span").html();
+                employee.Id = +employeeId;
+                $.ajax({
+                    type: "DELETE",
+                    url: "https://localhost:44399/api/Employees",
+                    data: JSON.stringify(employee),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (response) {
+                        row.remove();
+                        //if ($("#tblEmployees tr").length > 2) {
+                        //    //row.remove();
+                        //} else {
+                        //    row.find(".Edit").hide();
+                        //    row.find(".Delete").hide();
+                        //    row.find("span").html('&nbsp;');
+                        //}
+                    }
+                });
+                row.remove();
+            }
+        });
+    </script>
+</body>
+</html>
